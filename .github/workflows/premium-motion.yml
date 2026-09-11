@@ -1,0 +1,50 @@
+name: premium-motion-layer
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  apply-motion:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Add premium motion layer
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('index.html')
+          s=p.read_text(encoding='utf-8')
+          marker='<style id="premium-motion-layer">'
+          if marker in s: raise SystemExit('motion layer already present')
+          css=r'''<style id="premium-motion-layer">
+:root{--motion-blue:#7bdcff;--motion-coral:#ff866f;--motion-lime:#d8f56d}
+body{background-image:radial-gradient(900px 560px at 12% -8%,rgba(123,220,255,.09),transparent 60%),radial-gradient(860px 600px at 100% 8%,rgba(255,134,111,.08),transparent 60%),linear-gradient(180deg,#090a0d 0%,#07080b 55%,#0b0c10 100%)}
+body:before{opacity:.28;transform:translateZ(0)}body:after{opacity:.42;transform:translate3d(0,0,0) rotate(-17deg)}
+.hero,.translator,.section{backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);box-shadow:0 22px 64px rgba(0,0,0,.34);contain:paint}
+.hero:before,.translator:before,.section:before{opacity:.55;transform:translate3d(-28%,0,0);animation:zvSheen 12s ease-in-out infinite}
+.top,.hero,.translator,.footer{animation:zvEnter .72s cubic-bezier(.18,.78,.24,1) both}.top{animation-delay:.02s}.hero{animation-delay:.08s}.translator{animation-delay:.16s}.footer{animation-delay:.24s}
+.mark{transform:translateZ(0);will-change:transform}.mark:after{animation:zvSpin 22s linear infinite}.hero-copy:after{animation:zvGhost 9s ease-in-out infinite alternate;will-change:transform,opacity}.info .signal{animation:zvPulse 2.8s ease-in-out infinite}
+.translator{isolation:isolate}.translator:after{content:"";position:absolute;top:0;left:-22%;width:18%;height:1px;background:linear-gradient(90deg,transparent,var(--motion-blue),transparent);opacity:.55;transform:translate3d(0,0,0);animation:zvSweep 6.5s cubic-bezier(.42,0,.58,1) infinite;pointer-events:none}
+.pane{transition:transform .24s ease,border-color .24s ease,box-shadow .24s ease}.pane:hover{transform:translateY(-2px);border-color:#353a41;box-shadow:0 16px 40px rgba(0,0,0,.22)}
+.btn,.mode-badge{transform:translateZ(0);will-change:transform}.btn:active{transform:translateY(0) scale(.98)}.btn.primary{box-shadow:0 8px 24px rgba(216,245,109,.12);animation:zvButtonBreath 3.6s ease-in-out infinite}.glyph{transform:translateZ(0);will-change:transform}.glyph:hover{animation:zvGlyphPop .28s cubic-bezier(.2,.9,.3,1) both}
+.word,.example,.example-btn{will-change:transform}.example-btn:active,.example:active{transform:translateX(-2px) scale(.995)}
+@keyframes zvEnter{from{opacity:0;transform:translate3d(0,18px,0)}to{opacity:1;transform:translate3d(0,0,0)}}@keyframes zvSpin{to{transform:rotate(360deg)}}@keyframes zvGhost{from{transform:translate3d(0,0,0) rotate(0deg);opacity:.72}to{transform:translate3d(16px,-8px,0) rotate(1.5deg);opacity:.96}}@keyframes zvPulse{0%,100%{transform:scale(.82);opacity:.65}50%{transform:scale(1.12);opacity:1}}@keyframes zvSweep{0%,12%{transform:translate3d(0,0,0);opacity:0}22%{opacity:.55}68%{opacity:.55}82%,100%{transform:translate3d(700%,0,0);opacity:0}}@keyframes zvButtonBreath{0%,100%{box-shadow:0 8px 24px rgba(216,245,109,.08)}50%{box-shadow:0 10px 30px rgba(123,220,255,.15)}}@keyframes zvGlyphPop{50%{transform:translate3d(0,-4px,0) scale(1.035)}}
+@media(max-width:700px){.hero:before,.translator:before,.section:before{animation:none}.translator:after{animation-duration:8s}.pane:hover{transform:none}.hero-copy:after{opacity:.55}.btn.primary{animation:none}}
+@media(prefers-reduced-motion:reduce){.top,.hero,.translator,.footer,.mark:after,.hero-copy:after,.info .signal,.translator:after,.btn.primary,.glyph{animation:none!important}.pane,.btn,.mode-badge,.glyph,.word,.example,.example-btn{transition:none!important}.pane:hover{transform:none}}
+</style>'''
+          s=s.replace('</head>',css+'\n</head>',1)
+          p.write_text(s,encoding='utf-8')
+          PY
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html
+          git commit -m 'style: add performant premium motion layer'
+          git push
+          git rm .github/workflows/premium-motion.yml
+          git commit -m 'chore: remove one-shot motion installer'
+          git push
