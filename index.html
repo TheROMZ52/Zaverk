@@ -11,7 +11,7 @@
 </head>
 <body>
 <main class="shell">
-<header class="top"><div class="brand"><div class="mark">Ž</div><div><p class="eyebrow">LANGUAGE LAB</p><h1>مترجم ژاڤرک</h1></div></div><div class="version">Žavërk • v6.2</div></header>
+<header class="top"><div class="brand"><div class="mark">Ž</div><div><p class="eyebrow">LANGUAGE LAB</p><h1>مترجم ژاڤرک</h1></div></div><div class="version">Žavërk • v6.3</div></header>
 <section class="hero"><div class="hero-copy"><p class="eyebrow">FA ↔ ŽAVËRK</p><h2>فارسی رو بده،<br><span class="gradient">ژاڤرک تحویل بگیر.</span></h2><p>متنت رو وارد کن و ترجمه رو همون‌جا تحویل بگیر.</p><div class="chips"><span class="chip">ترجمه در لحظه</span><span class="chip">فارسی ↔ ژاڤرک</span><span class="chip">الفبای ژاڤرک</span><span class="chip">کپی سریع</span></div><div class="alphabet" id="alphabet"></div></div><div class="info"><div class="info-title"><span>نمونه‌های ژاڤرک</span><span class="signal"></span></div><div class="example"><small>نمونه</small><strong>بازی</strong><span>VäƵ</span></div><div class="example"><small>نمونه</small><strong>ممد</strong><span>MëMÐë</span></div><div class="example"><small>جمله</small><strong>ممد بریم بازی؟</strong><span>MëMÐë VRİMë VäƵ؟</span></div></div></section>
 <section class="translator"><div class="toolbar"><div class="mode"><span class="mode-badge" id="fromLang">فارسی</span><span>→</span><span class="mode-badge" id="toLang">ژاڤرک</span></div><div class="toolbar-actions"><button class="btn" id="clear">پاک کردن</button><button class="btn" id="swap">⇄ جابه‌جایی</button></div></div><div class="panes"><section class="pane"><div class="pane-head"><h3>متن شما</h3><span class="lang" id="inputTag">INPUT · FA</span></div><textarea class="editor" id="input" spellcheck="false" placeholder="مثلاً: ممد بریم بازی؟"></textarea><div class="pane-foot"><span id="inputCount">۰ نویسه</span><div class="mini-actions"><button class="btn" id="copyInput">کپی</button><button class="btn" id="pasteInput">چسباندن</button></div></div></section><div class="bridge"><button class="btn swap" id="swap2">⇄</button><button class="btn primary translate" id="translate">ترجمه</button></div><section class="pane"><div class="pane-head"><h3>نتیجه</h3><span class="lang" id="outputTag">OUTPUT · ZV</span></div><textarea class="editor output" id="output" readonly placeholder="نتیجه اینجا ظاهر می‌شود..."></textarea><div class="pane-foot"><span id="outputCount">۰ نویسه</span><div class="mini-actions"><button class="btn" id="copyOutput">کپی نتیجه</button></div></div></section></div><div class="status" id="status">آماده‌ام؛ متن را بنویس.</div></section>
 <div class="footer"><section class="section"><h3>واژه‌های پایه ژاڤرک</h3><div class="word-grid" id="words"></div></section><section class="section"><h3>جمله‌های نمونه</h3><div class="examples" id="examples"></div></section></div>
@@ -19,25 +19,24 @@
 <script>
 const faToZv={"سلام":"Sëlvë","درود":"Dräž","خداحافظ":"Xädrûn","من":"Më","تو":"Tü","را":"","او":"Ër","ما":"Mën","شما":"Tën","آنها":"Änër","دوست":"Dösk","دوستان":"Döskën","خانه":"Xën","شهر":"Şär","آب":"Äv","آتش":"Ätş","زمین":"Ƶän","آسمان":"Äşmän","شب":"Şäb","روز":"Röž","خوب":"Göð","بد":"Bäd","بزرگ":"Börg","کوچک":"Köl","سریع":"Sär","کند":"Kän","عجیب":"ÄƵib","قوی":"Qöi","ضعیف":"Zäif","رفتن":"Räv","رفتم":"RävÐ","می‌روم":"Rävä","میروم":"Rävä","خواهم رفت":"Rävü","آمدن":"Käm","آمدم":"KämÐ","می‌آیم":"Kämä","میام":"Kämä","دیدن":"Dîr","می‌بینم":"Dîrä","خوردن":"Xör","می‌خورم":"Xörä","نوشیدن":"Nöş","می‌نوشم":"Nöşä","ساختن":"Säx","دارم":"Därä","داشتن":"Där","دوست داشتن":"Döskläv","دوستت دارم":"Më Tü Lävä","گفتن":"Ƶär","هستم":"Bä","هستی":"Bä","هست":"Bä","هستیم":"Bän","هستید":"Bän","هستند":"Bän","نمی":"Nä","نه":"Nä","آره":"Ärä","بله":"Bälä","بازی":"VäƵ","بریم":"VRİM"};
 const zvToFa={"Sëlvë":"سلام","Dräž":"درود","Xädrûn":"خداحافظ","Më":"من","Tü":"تو","Ër":"او","Mën":"ما","Tën":"شما","Änër":"آنها","Dösk":"دوست","Döskën":"دوستان","Xën":"خانه","Şär":"شهر","Äv":"آب","Ätş":"آتش","Ƶän":"زمین","Äşmän":"آسمان","Şäb":"شب","Röž":"روز","Göð":"خوب","Bäd":"بد","Börg":"بزرگ","Köl":"کوچک","Sär":"سریع","Kän":"کند","ÄƵib":"عجیب","Qöi":"قوی","Zäif":"ضعیف","Räv":"رفتن","RävÐ":"رفتم","Rävä":"می‌روم","Rävü":"خواهم رفت","Käm":"آمدن","KämÐ":"آمدم","Kämä":"می‌آیم","Dîr":"دیدن","Dîrä":"می‌بینم","Xör":"خوردن","Xörä":"می‌خورم","Nöş":"نوشیدن","Nöşä":"می‌نوشم","Säx":"ساختن","Därä":"دارم","Där":"داشتن","Döskläv":"دوست داشتن","Më Tü Lävä":"دوستت دارم","Ƶär":"گفتن","Bä":"هست / بودن","Bän":"هستیم / هستند","Nä":"نه / نمی","Ärä":"بله","Bälä":"بله","VäƵ":"بازی","VRİM":"بریم"};
-const aliases={"MëMÐë":"ممد","MëMÐ":"ممد","VRİMë":"بریم","VäƵ":"بازی","Më Tü Lävä":"دوستت دارم"};
+const aliases={"MëMÐë":"ممد","MëMÐ":"ممد","VRİMë":"بریم","Më Tü Lävä":"دوستت دارم"};
 const translit={"ا":"A","آ":"Ä","ب":"B","پ":"P","ت":"T","ث":"ß","ج":"J","چ":"Ç","ح":"H","خ":"Ǥ","د":"Ð","ذ":"Z","ر":"R","ز":"Z","ژ":"Ƶ","س":"S","ش":"Ş","ص":"Ś","ض":"D","ط":"Ŧ","ظ":"Z","ع":"Ğ","غ":"Ġ","ف":"F","ق":"Q","ک":"K","گ":"G","ل":"L","م":"M","ن":"N","و":"Ü","ه":"H","ی":"İ","ء":"'"};
+const reverseTranslit={"A":"ا","Ä":"آ","B":"ب","P":"پ","T":"ت","ß":"ث","J":"ج","Ç":"چ","H":"ه","Ǥ":"خ","Ð":"د","Z":"ز","R":"ر","Ƶ":"ژ","S":"س","Ş":"ش","Ś":"ص","D":"ض","Ŧ":"ط","Ğ":"ع","Ġ":"غ","F":"ف","Q":"ق","K":"ک","G":"گ","L":"ل","M":"م","N":"ن","Ü":"و","İ":"ی","'":"ء","Ñ":"نگ"};
 const faWords=Object.keys(faToZv).filter(k=>faToZv[k]).sort((a,b)=>b.length-a.length);
 const zvWords=[...new Set([...Object.keys(aliases),...Object.keys(zvToFa)])].sort((a,b)=>b.length-a.length);
 const normalize=s=>s.normalize('NFC').replace(/[–—]/g,'-').replace(/\u200c/g,'').trim().toLowerCase();
 const reverse=new Map([...Object.entries(zvToFa),...Object.entries(aliases)].map(([k,v])=>[normalize(k),v]));
 function faFallback(w){return [...w.replace(/نگ/g,'Ñ')].map(c=>translit[c]??c).join('')}
 function translateFA(text){let s=text;for(const w of faWords)s=s.replaceAll(w,'\u0000'+faToZv[w]+'\u0000');return s.split(/(\u0000[^\u0000]*\u0000|\s+)/).map(part=>part.startsWith('\u0000')?part.slice(1,-1):/^\s+$/.test(part)?part:faFallback(part)).join('').replace(/ +/g,' ').trim()}
+function reverseFallback(core){let out='';for(const ch of [...core.normalize('NFC')])out+=reverseTranslit[ch]??ch;return out}
 function translateZV(text){
- const parts=text.split(/(\s+)/);return parts.map(part=>{
-   if(/^\s+$/.test(part))return part;
-   const lead=(part.match(/^[^\p{L}\p{M}]+/u)||[''])[0];
-   const trail=(part.match(/[^\p{L}\p{M}]+$/u)||[''])[0];
-   const core=part.slice(lead.length,trail.length?part.length-trail.length:part.length);
-   const exact=reverse.get(normalize(core));if(exact!==undefined)return lead+exact+trail;
-   const lower=normalize(core);
-   for(const key of zvWords){if(lower===normalize(key))return lead+reverse.get(normalize(key))+trail;}
-   return part;
- }).join('').trim();
+ let s=text.normalize('NFC').replace(/[–—]/g,'-').replace(/\u200c/g,'');
+ const entries=[...new Map([...Object.entries(zvToFa),...Object.entries(aliases)].map(([k,v])=>[normalize(k),v])).entries()].sort((a,b)=>b[0].length-a[0].length);
+ for(const [key,value] of entries){
+   const esc=key.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+   s=s.replace(new RegExp(`(?<![\\p{L}\\p{M}])${esc}(?![\\p{L}\\p{M}])`,'giu'),value);
+ }
+ return s.split(/(\s+)/).map(part=>/^\s+$/.test(part)?part:part.replace(/(^[^\p{L}\p{M}]+|[^\p{L}\p{M}]+$)/gu,'')).map(part=>{if(!part)return '';const n=normalize(part);return reverse.get(n)??reverseFallback(part)}).join('');
 }
 const input=document.getElementById('input'),output=document.getElementById('output'),status=document.getElementById('status');let faFirst=true;
 function counts(){document.getElementById('inputCount').textContent=input.value.length.toLocaleString('fa-IR')+' نویسه';document.getElementById('outputCount').textContent=output.value.length.toLocaleString('fa-IR')+' نویسه'}
