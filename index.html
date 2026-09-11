@@ -21,14 +21,13 @@ const faCanon=s=>s.normalize('NFC').replace(/[يى]/g,'ی').replace(/ك/g,'ک').
 const escapeRe=s=>s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
 const knownFa=Object.keys(faDict).filter(Boolean).sort((a,b)=>b.length-a.length);
 const knownZv=Object.entries(faDict).filter(([,z])=>z).map(([fa,z])=>[z,fa]).concat(Object.entries(legacyZvToFa)).sort((a,b)=>b[0].length-a[0].length);
-function protect(text,entries){let slots=[];for(const [key,val] of entries){const re=new RegExp('(?<![\\p{L}\\p{M}])'+escapeRe(key)+'(?![\\p{L}\\p{M}])','gu');text=text.replace(re,()=>{const i=slots.length;slots.push(val);return '\uE000'+i+'\uE001'});}return [text,slots]}
+function protect(text,entries){const slots=[];for(const [key,val] of entries){const re=new RegExp('(?<![\\p{L}\\p{M}])'+escapeRe(key)+'(?![\\p{L}\\p{M}])','gu');text=text.replace(re,()=>{const i=slots.length;slots.push(val);return '\uE000'+i+'\uE001'});}return [text,slots]}
 function restoreAndEncode(text,slots){let out='',i=0;while(i<text.length){if(text[i]==='\uE000'){const j=text.indexOf('\uE001',i+1);const n=Number(text.slice(i+1,j));out+=slots[n];i=j+1;continue}out+=unit[text[i]]??text[i];i++;}return out}
 function translateFA(s){s=faCanon(s);const entries=knownFa.map(k=>[faCanon(k),faDict[k]]);const [protectedText,slots]=protect(s,entries);return restoreAndEncode(protectedText,slots).replace(/\s+/g,' ').replace(/ ?([،؛,:.!؟?])/g,'$1').trim()}
 function decodeUnits(text){let out='',i=0;while(i<text.length){const pair=text.slice(i,i+2);if(unitReverse[pair]){out+=unitReverse[pair];i+=2}else{out+=text[i];i++;}}return out}
-function translateZV(s){s=s.normalize('NFC').replace(/\u200c/g,'');const [protectedText,slots]=protect(s,knownZv);return decodeUnits(protectedText.replace(/\s+/g,' ')).replace(/\uE000(\d+)\uE001/g,(_,i)=>slots[Number(i)]??'').replace(/ ?([،؛,:.!؟?])/g,'$1').trim()}
-const glyphs=[...new Set(Object.values(unit).flatMap(x=>[...x]))];$('alphabet')
+function translateZV(s){s=s.normalize('NFC').replace(/\u200c/g,'');const [protectedText,slots]=protect(s,knownZv);return decodeUnits(protectedText).replace(/\uE000(\d+)\uE001/g,(_,i)=>slots[Number(i)]??'').replace(/\s+/g,' ').replace(/ ?([،؛,:.!؟?])/g,'$1').trim()}
 function $(id){return document.getElementById(id)}
-$('alphabet').innerHTML=glyphs.map(g=>`<span class="glyph">${g}</span>`).join('');
+const glyphs=[...new Set(Object.values(unit).flatMap(x=>[...x]))];$('alphabet').innerHTML=glyphs.map(g=>`<span class="glyph">${g}</span>`).join('');
 const words=[['سلام','Šævra'],['درود','Ðøren'],['دوست','Drøk'],['خانه','Käv'],['آب','Ulv'],['آتش','Røk'],['خوب','Mëla'],['بازی','VæƵ'],['من','Në'],['تو','Vü'],['رفتن','Varn'],['آمدن','Kelm']];$('words').innerHTML=words.map(([fa,zv])=>`<div class="word"><b>${zv}</b><span>${fa}</span></div>`).join('');
 const examples=[['سلام دوست من','Šævra Drøk Në'],['من می‌روم','Në Varna'],['ممد بریم بازی؟','Møža Vrëm VæƵ؟'],['من تو را دوست دارم','Në Vü Drøklæv']];$('examples').innerHTML=examples.map(([fa,zv])=>`<button class="example-btn" data-fa="${fa}"><strong>${fa}</strong><span>${zv}</span></button>`).join('');
 let reverse=false;const input=$('input'),output=$('output'),status=$('status');
