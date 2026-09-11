@@ -1,26 +1,28 @@
 # Žavërk Translator Design
 
 ## Direction
-A compact language-lab tool for translating Persian into the fictional Žavërk language and back. The product should feel like a small experimental instrument rather than a generic translation website.
+Žavërk is a small experimental language instrument: part translator, part specimen board. The UI should feel authored and collectible rather than like a generic AI translation dashboard.
 
 ## Visual system
-- Background: near-black navy with two cool atmospheric glows and a subtle technical grid.
-- Surfaces: deep blue-black glass panels with restrained borders and large 22–28px radii.
-- Accent: electric cyan for language markers and active states; violet is reserved for secondary gradient depth.
-- Positive feedback: mint green; warnings use warm gold without relying on color alone.
-- Typography: Vazirmatn for Persian UI, with Latin Žavërk text rendered direction-aware.
+- Background: near-black ink with restrained cool-blue and warm-coral atmospheric light.
+- Surfaces: quiet charcoal panels with thin graphite borders and low-opacity glass, avoiding oversized glossy cards.
+- Accents: sky blue for language/output emphasis, coral for warmth, lime for live/ready state.
+- Typography: Vazirmatn for Persian interface text; Space Grotesk for Latin labels, Žavërk output, and utility metadata.
+- Shape language: medium-radius instrument housings, circular Ž seals, rectangular specimen tags, and restrained micro-labels.
 
 ## Composition
-The hero establishes the language identity. The translator is the primary workspace: two equal editor panes with a narrow control bridge. Dictionary and examples are secondary reference surfaces below the workspace.
+The hero is an asymmetrical identity panel: oversized Persian headline, specimen examples, and a visible Ž glyph signature. The translator remains the primary task surface below it. Reference words and example phrases stay secondary and visually quiet.
 
 ## Signature
-The language bridge: a small glowing Ž mark, paired language pills, and a central swap/translate control make the interface read as a bespoke language instrument.
+The circular Ž seal is the visual anchor. The hero's oversized outlined Ž and the central translator bridge echo the same mark, making the language itself part of the interface geometry.
+
+## Motion
+Use one coordinated entrance sequence and small hover lifts only. The Ž seal may rotate slowly as ambient atmosphere; reduced-motion users receive no animation-dependent meaning.
 
 ## Behavior
-- Sentence-aware phrase rules take priority over isolated dictionary replacement.
-- Proper names remain untouched unless a translation rule explicitly exists.
-- Word replacement is boundary-aware so substrings do not corrupt unrelated words.
-- Persian normalization handles Arabic ی/ک variants and zero-width joiner noise.
-- Copy, paste, clear, swap, keyboard translation, character counts, and live status are available.
-- Reduced-motion users receive the same functionality without transition effects.
-- Textareas remain fixed-height application surfaces on mobile; users do not get accidental page reflow from resizing.
+- Preserve the existing translator engine and dictionary behavior when changing visual presentation.
+- Keep language selects native and visible.
+- Preserve live translation, swap, clear, copy, paste, examples, character counts, status feedback, and RTL/LTR switching.
+- Maintain visible keyboard focus and accessible labels.
+- Keep textareas stable and fixed-height on mobile to avoid layout jumps.
+- Use an app-owned status/error surface instead of browser alerts.
