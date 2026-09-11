@@ -32,26 +32,44 @@ const enToZv={
   no:'Næ',yes:'Ära',not:'Næ',never:'Nëvar',always:'Alvë',sometimes:'Sëma',many:'Mara',few:'Nëli',more:'Möra',less:'Nëra',very:'Vära',only:'Sola',also:'Oma',and:'Va',or:'Vaor',but:'Ama',if:'Ira',because:'Köra',that:'Ke',for:'Föra',with:'Mä',without:'Nëmba',from:'Da',to:'To',in:'In',on:'Ona',under:'Nöra',before:'Prë',after:'Eft',
   mamad:'Møža',"let’s":'Vrëm',"let's":'Vrëm'
 };
+
+/* Unknown-word fallback: English tokens not found in the dictionary are
+   preserved exactly instead of disappearing. This mirrors the Persian
+   translator's non-destructive fallback behavior. */
+const enAliases={colour:'color',favourite:'favorite',favourite:'favorite',centre:'center',centre:'center',organise:'organize',organised:'organized'};
+Object.entries(enAliases).forEach(([from,to])=>{if(enToZv[to])enToZv[from]=enToZv[to]});
 const zvToEn={};Object.entries(enToZv).forEach(([en,zv])=>{if(!zvToEn[zv])zvToEn[zv]=en});
-const faToEn={};Object.entries(faDict).forEach(([fa,zv])=>{const enMap={"Šævra":"hello","Ðøren":"greetings","Krävul":"goodbye","Në":"I","Vü":"you","Ën":"he/she","Nëm":"we","Vën":"you","Ënra":"they","Drøk":"friend","Drøken":"friends","Käv":"home","Şevar":"city","Ulv":"water","Røk":"fire","Zæn":"earth","Aşra":"sky","Nøkt":"night","Ræva":"day","Mëla":"good","Durg":"bad","Grön":"big","Neli":"small","Sæva":"fast","Toma":"slow","Qæzar":"strange","Bruk":"strong","Løven":"weak","Varn":"go","Varnë":"went","Varnø":"went","Varnï":"went","Varnëm":"went","Varnët":"went","Varnën":"went","Varna":"I am going","Varni":"you are going","Varnor":"he/she is going","Varnem":"we are going","Varnen":"they are going","Varnul":"I will go","Kelm":"come","Kelmë":"came","Kelmø":"came","Kelmi":"came","Kelmëm":"came","Kelmët":"came","Kelmën":"came","Kelmæ":"I am coming","Kelmiä":"you are coming","Kelmor":"he/she is coming","Dævr":"see","Dævra":"I see","Xøra":"eat","Xøræ":"I eat","Nuvş":"drink","Nuvşæ":"I drink","Sæk":"build","Dæra":"I have","Dær":"have","Drøklæv":"love","Ƶær":"say","Bë":"be","Bën":"are","Næ":"no","Ära":"yes","Bëla":"yes","VæƵ":"game","Vrëm":"let's go","Møža":"Mamad"};if(enMap[zv])faToEn[fa]=enMap[zv];else if(fa!=='را')faToEn[fa]=fa;});
-Object.assign(faToEn,{
-  "صبح بخیر":"good morning","شب بخیر":"good night","خوش آمدی":"welcome","خوش آمدید":"welcome","لطفاً":"please","لطفا":"please","ممنون":"thanks","متشکرم":"thank you","ببخشید":"sorry","خواهش می‌کنم":"you're welcome","خواهش میکنم":"you're welcome",
-  "سلام دوست من":"hello my friend","دوست من":"my friend","دوستت دارم":"I love you","من خوب هستم":"I am good","من می‌روم":"I am going","من خواهم رفت":"I will go","ممد بریم بازی":"Mamad let's play","بازی آنلاین":"online game"
-});
-const enToFa={};Object.entries(faToEn).forEach(([fa,en])=>{if(!enToFa[en])enToFa[en]=fa});
-const norm=s=>s.normalize('NFC').replace(/[’‘]/g,"'").trim();
-function wordTranslate(text,map){let out=norm(text);const keys=Object.keys(map).sort((a,b)=>b.length-a.length);for(const k of keys){const re=new RegExp('(?<![A-Za-z])'+k.replace(/[.*+?^${}()|[\\]\\]/g,'\\$&')+'(?![A-Za-z])','gi');out=out.replace(re,()=>map[k])}return out.replace(/\s+/g,' ').replace(/\s+([,!.?])/g,'$1').trim()}
-const extendedFaKeys=Object.keys(faDict).sort((a,b)=>b.length-a.length);
-const extendedZvEntries=Object.entries(faDict).filter(([,z])=>z).map(([fa,z])=>[z,fa]).concat(Object.entries(legacyZvToFa)).sort((a,b)=>b[0].length-a[0].length);
-function translateFAExtended(s){s=faCanon(s);let out=s;for(const k of extendedFaKeys){const re=new RegExp('(?<![\\p{L}\\p{M}])'+escapeRe(k)+'(?![\\p{L}\\p{M}])','gu');out=out.replace(re,()=>faDict[k])}return out.replace(/\s+/g,' ').replace(/ ?([،؛,:.!؟?])/g,'$1').trim()}
-function translateZVExtended(s){let out=s.normalize('NFC').replace(/\u200c/g,'');for(const [z,fa] of extendedZvEntries){const re=new RegExp('(?<![\\p{L}\\p{M}])'+escapeRe(z)+'(?![\\p{L}\\p{M}])','gu');out=out.replace(re,()=>fa)}return out.replace(/\s+/g,' ').replace(/ ?([،؛,:.!؟?])/g,'$1').trim()}
-translateFA=translateFAExtended;translateZV=translateZVExtended;
+const faToEn={};Object.entries(faDict).forEach(([fa,zv])=>{const enMap={"Šævra":"hello","Ðøren":"greetings","Krävul":"goodbye","Në":"I","Vü":"you","Ën":"he/she","Nëm":"we","Vën":"you","Ënra":"they","Drøk":"friend","Drøken":"friends","Käv":"home","Şevar":"city","Ulv":"water","Røk":"fire","Zæn":"earth","Aşra":"sky","Nøkt":"night","Ræva":"day","Mëla":"good","Durg":"bad","Grön":"big","Neli":"small","Sæva":"fast","Toma":"slow","Qæzar":"strange","Bruk":"strong","Løven":"weak","Varn":"go","Varnë":"went","Varnø":"went","Varnï":"went","Varnëm":"went","Varnët":"went","Varnën":"went","Varna":"I am going","Varni":"you are going","Varnor":"he/she is going","Varnem":"we are going","Varnen":"they are going","Varnul":"I will go","Kelm":"come","Kelmë":"came","Kelmø":"came","Kelmi":"came","Kelmëm":"came","Kelmët":"came","Kelmën":"came","Kelmæ":"I am coming","Kelmiä":"you are coming","Kelmor":"he/she is coming","Dævr":"see","Dævra":"I see","Xøra":"eat","Xøræ":"I eat","Nuvş":"drink","Nuvşæ":"I drink","Sæk":"build","Dæra":"I have","Dær":"have","Drøklæv":"love","Ƶær":"say","Bë":"be","Bën":"are","Næ":"no","Ära":"yes","Bëla":"yes","VæƵ":"game","Vrëm":"let's go","Møža":"Mamad"};return faToEn[fa]=enMap[zv]||fa});
+
+const norm=s=>s.normalize('NFC').replace(/[’‘]/g,"'");
+const escapeRe=s=>s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+const wordRegex=/[A-Za-z]+(?:['’][A-Za-z]+)*/g;
+
+function wordTranslate(text,map){
+  const source=norm(text);
+  return source.replace(wordRegex,word=>{
+    const key=word.toLowerCase();
+    const mapped=map[key];
+    if(mapped!=null)return mapped;
+    return word;
+  }).replace(/\s+/g,' ').replace(/\s+([,!.?;:])/g,'$1').trim();
+}
+
 function translateENtoZV(s){return wordTranslate(s,enToZv)}
 function translateZVtoEN(s){return wordTranslate(s,zvToEn)}
 function translateENtoFA(s){return wordTranslate(s,enToFa)}
 function translateFAtoEN(s){return wordTranslate(s,faToEn)}
+
 let languageFrom='fa',languageTo='zv';
-function translateAny(s){if(languageFrom==='fa'&&languageTo==='zv')return translateFA(s);if(languageFrom==='zv'&&languageTo==='fa')return translateZV(s);if(languageFrom==='en'&&languageTo==='zv')return translateENtoZV(s);if(languageFrom==='zv'&&languageTo==='en')return translateZVtoEN(s);if(languageFrom==='en'&&languageTo==='fa')return translateENtoFA(s);if(languageFrom==='fa'&&languageTo==='en')return translateFAtoEN(s);return s}
+function translateAny(s){
+  if(languageFrom==='fa'&&languageTo==='zv')return translateFA(s);
+  if(languageFrom==='zv'&&languageTo==='fa')return translateZV(s);
+  if(languageFrom==='en'&&languageTo==='zv')return translateENtoZV(s);
+  if(languageFrom==='zv'&&languageTo==='en')return translateZVtoEN(s);
+  if(languageFrom==='en'&&languageTo==='fa')return translateENtoFA(s);
+  if(languageFrom==='fa'&&languageTo==='en')return translateFAtoEN(s);
+  return s;
+}
 function labels(){return {fa:'فارسی',en:'English',zv:'ژاڤرک'}}
 function renderMode(){const a=labels();document.getElementById('fromLang').textContent=a[languageFrom];document.getElementById('toLang').textContent=a[languageTo];document.getElementById('inputTag').textContent='INPUT · '+languageFrom.toUpperCase();document.getElementById('outputTag').textContent='OUTPUT · '+languageTo.toUpperCase();const p={fa:'مثلاً: ممد بریم بازی؟',en:'e.g. I love you.',zv:'مثلاً: Në Vü Drøklæv'};document.getElementById('input').placeholder=p[languageFrom];document.getElementById('input').dir=languageFrom==='fa'?'rtl':'ltr';document.getElementById('output').dir=languageTo==='fa'?'rtl':'ltr';document.getElementById('output').style.textAlign=languageTo==='fa'?'right':'left'}
 function update3(){const input=document.getElementById('input'),output=document.getElementById('output'),status=document.getElementById('status'),s=input.value;output.value=s?translateAny(s):'';document.getElementById('inputCount').textContent=`${s.length.toLocaleString('fa-IR')} نویسه`;document.getElementById('outputCount').textContent=`${output.value.length.toLocaleString('fa-IR')} نویسه`;status.textContent=s?`ترجمه آماده است؛ ${output.value.length.toLocaleString('fa-IR')} نویسه خروجی ساخته شد.`:'آماده‌ام؛ متن را بنویس.'}
@@ -60,7 +78,5 @@ const toolbar=document.querySelector('.mode');toolbar.innerHTML='<select class="
 const fs=document.getElementById('fromSelect'),ts=document.getElementById('toSelect');fs.value='fa';ts.value='zv';fs.onchange=()=>setLanguages(fs.value,ts.value);ts.onchange=()=>setLanguages(fs.value,ts.value);
 document.getElementById('input').addEventListener('input',update3);document.getElementById('translate').onclick=update3;document.getElementById('swap').onclick=()=>{const x=fs.value;fs.value=ts.value;ts.value=x;setLanguages(fs.value,ts.value)};document.getElementById('swap2').onclick=()=>{const x=fs.value;fs.value=ts.value;ts.value=x;setLanguages(fs.value,ts.value)};
 document.querySelectorAll('.example-btn').forEach(b=>b.onclick=()=>{fs.value='fa';ts.value='zv';setLanguages('fa','zv');document.getElementById('input').value=b.dataset.fa;update3()});
-const versionEl=document.querySelector('.version');if(versionEl)versionEl.textContent='Žavërk • v8.3';
-const heroDesc=document.querySelector('.desc');if(heroDesc)heroDesc.textContent='متنت رو به فارسی، انگلیسی یا ژاڤرک وارد کن و بین هر سه زبان ترجمه بگیر؛ حالا با واژه‌های خیلی بیشتر.';
 renderMode();update3();
 })();
