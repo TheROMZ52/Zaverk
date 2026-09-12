@@ -1,0 +1,36 @@
+name: Add Supabase name storage
+on:
+  push:
+    branches: [main]
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch name gate
+        shell: python
+        run: |
+          from pathlib import Path
+          p = Path('index.html')
+          s = p.read_text(encoding='utf-8')
+          cdn = '<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>\n'
+          if 'cdn.jsdelivr.net/npm/@supabase/supabase-js@2' not in s:
+              s = s.replace('</head>', cdn + '</head>', 1)
+          old = "const enter=()=>{const name=input.value.trim();if(name.length<2){sync();input.focus();return}gate.remove();document.body.classList.remove('zv-gate-locked');window.zaverkVisitorName=name};"
+          new = "const enter=async()=>{const name=input.value.trim();if(name.length<2){sync();input.focus();return}submit.disabled=true;status.textContent='ثبت اسم…';try{const client=supabase.createClient('https://fjzhkprnxznijwmjrlka.supabase.co','sb_publishable_OeU6Z8Yn_rPuxfKRsMApqw__kcMQIKA');const {error}=await client.from('zaverk_site_visitors').insert({name});if(error)throw error;window.zaverkVisitorName=name;try{localStorage.setItem('zaverkVisitorName',name)}catch{}gate.remove();document.body.classList.remove('zv-gate-locked')}catch(e){console.error(e);status.textContent='ثبت اسم انجام نشد؛ دوباره تلاش کن.';submit.disabled=false}};"
+          if old not in s:
+              raise SystemExit('expected name-gate function not found')
+          s = s.replace(old, new, 1)
+          p.write_text(s, encoding='utf-8')
+      - name: Commit patch and remove installer
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git commit -m "feat: store visitor names in Supabase"
+          git rm .github/workflows/add-supabase-name-storage.yml
+          git commit -m "chore: remove one-shot Supabase installer"
+          git push
