@@ -52,6 +52,7 @@ body.zv-gate-locked{overflow:hidden}
 @media(max-width:520px){.zv-name-card{padding:25px;border-radius:20px}.zv-name-card h2{font-size:24px}}
 @media(prefers-reduced-motion:reduce){.zv-name-input,.zv-name-button{transition:none}}
 </style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 <div class="zv-name-gate" id="zvNameGate" role="dialog" aria-modal="true" aria-labelledby="zvNameTitle">
@@ -130,7 +131,7 @@ render();update();
   if(!gate||!input||!submit)return;
   document.body.classList.add('zv-gate-locked');
   const sync=()=>{const name=input.value.trim();submit.disabled=name.length<2;status.textContent=name&&name.length<2?'اسم باید حداقل ۲ نویسه باشد.':''};
-  const enter=()=>{const name=input.value.trim();if(name.length<2){sync();input.focus();return}gate.remove();document.body.classList.remove('zv-gate-locked');window.zaverkVisitorName=name};
+  const enter=async()=>{const name=input.value.trim();if(name.length<2){sync();input.focus();return}submit.disabled=true;status.textContent='ثبت اسم…';try{const client=supabase.createClient('https://fjzhkprnxznijwmjrlka.supabase.co','sb_publishable_OeU6Z8Yn_rPuxfKRsMApqw__kcMQIKA');const {error}=await client.from('zaverk_site_visitors').insert({name});if(error)throw error;window.zaverkVisitorName=name;try{localStorage.setItem('zaverkVisitorName',name)}catch{}gate.remove();document.body.classList.remove('zv-gate-locked')}catch(e){console.error(e);status.textContent='ثبت اسم انجام نشد؛ دوباره تلاش کن.';submit.disabled=false}};
   input.addEventListener('input',sync);
   input.addEventListener('keydown',e=>{if(e.key==='Enter')enter()});
   submit.addEventListener('click',enter);
