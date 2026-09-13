@@ -12,13 +12,13 @@
 <section class="stats">
 <div><span>پیام دریافتی</span><strong id="in">0</strong></div>
 <div><span>پیام ارسالی</span><strong id="out">0</strong></div>
-<div><span>چت‌های دیده‌شده</span><strong id="chatsCount">0</strong></div>
+<div><span>چت‌های ذخیره‌شده</span><strong id="chatsCount">0</strong></div>
 <div><span>ارسال فعال</span><strong id="tasks">0</strong></div>
 </section>
 <section class="layout">
 <aside class="panel"><div class="panelHead"><h2>چت‌ها</h2><input id="search" placeholder="جستجوی چت..."></div><div id="chatList" class="chatList"></div></aside>
 <section class="panel messages"><div class="panelHead"><h2>پیام‌های زنده</h2><button id="stop">توقف همه</button></div><div id="stream" class="stream"></div></section>
-<aside class="panel composer"><h2>ارسال پیام</h2><label>Chat ID<input id="chatId" placeholder="c..." dir="ltr"></label><label>متن پیام<textarea id="text" rows="6" placeholder="پیامت را بنویس..."></textarea></label><div class="row"><label>Delay (ثانیه)<input id="delay" type="number" min="1" value="1"></label><label>تعداد<input id="count" type="number" min="1" max="100" value="1"></label></div><button id="send" class="primary">ارسال</button><p id="error" class="error"></p></aside>
+<aside class="panel composer"><h2>ارسال پیام</h2><div id="selectedChat" class="selectedChat">هنوز چتی انتخاب نشده</div><label>Chat ID<input id="chatId" placeholder="c..." dir="ltr"></label><label>متن پیام<textarea id="text" rows="6" placeholder="پیامت را بنویس..."></textarea></label><div class="row"><label>Delay (ثانیه)<input id="delay" type="number" min="1" value="1"></label><label>تعداد<input id="count" type="number" min="1" max="100" value="1"></label></div><button id="send" class="primary">ارسال</button><p id="error" class="error"></p></aside>
 </section>
 </main>
 <script src="/static/app.js"></script>
