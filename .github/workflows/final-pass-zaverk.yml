@@ -1,0 +1,36 @@
+name: Final Zaverk bugfix pass
+on:
+  push:
+    branches: [main]
+permissions:
+  contents: write
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Repair remaining issues
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('index.html')
+          s = p.read_text(encoding='utf-8')
+          s = s.replace('<link rel="alternate" hreflang="fa" href="https://theromz52.github.io/Zaverk/"><link rel="alternate" <link rel="alternate" hreflang="x-default" href="https://theromz52.github.io/Zaverk/">', '<link rel="alternate" hreflang="fa" href="https://theromz52.github.io/Zaverk/"><link rel="alternate" hreflang="x-default" href="https://theromz52.github.io/Zaverk/">', 1)
+          s = s.replace('role="dialog" aria-modal="true" aria-labelledby="zvNameTitle">', 'role="dialog" aria-modal="true" aria-labelledby="zvNameTitle" aria-describedby="zvNameDescription">', 1)
+          s = s.replace('<p>برای ورود به مترجم ژاڤرک، اول اسم خودت رو وارد کن.</p>', '<p id="zvNameDescription">برای ورود به مترجم ژاڤرک، اول اسم خودت رو وارد کن.</p>', 1)
+          s = s.replace('maxlength="40" spellcheck="false" placeholder="مثلاً مهبد">', 'maxlength="40" minlength="2" spellcheck="false" aria-invalid="false" aria-describedby="zvNameStatus" placeholder="مثلاً مهبد">', 1)
+          s = s.replace("const sync=()=>{const name=input.value.trim();submit.disabled=name.length<2;status.textContent=name&&name.length<2?'اسم باید حداقل ۲ نویسه باشد.':''};", "const sync=()=>{const name=input.value.trim();const invalid=name.length>0&&name.length<2;submit.disabled=name.length<2;input.setAttribute('aria-invalid',String(invalid));status.textContent=invalid?'اسم باید حداقل ۲ نویسه باشد.':''};", 1)
+          s = s.replace("catch(e){console.error(e);status.textContent='ثبت اسم انجام نشد؛ دوباره تلاش کن.';submit.disabled=false}};", "catch(e){console.warn('Visitor name storage unavailable',e)}window.zaverkVisitorName=name;gate.remove();document.body.classList.remove('zv-gate-locked');document.getElementById('input')?.focus()};", 1)
+          s = s.replace("submit.addEventListener('click',enter);\n  requestAnimationFrame(()=>input.focus());", "submit.addEventListener('click',enter);\n  gate.addEventListener('keydown',e=>{if(e.key!=='Tab')return;const focusables=[input,submit].filter(el=>!el.disabled);const first=focusables[0],last=focusables[focusables.length-1];if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus()}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus()}});\n  requestAnimationFrame(()=>input.focus());", 1)
+          old = "navigator.clipboard?.writeText(text).then(()=>showToast('کپی شد')).catch(()=>showToast('کپی انجام نشد'))"
+          new = "if(navigator.clipboard&&typeof navigator.clipboard.writeText==='function'){navigator.clipboard.writeText(text).then(()=>showToast('کپی شد')).catch(()=>showToast('کپی انجام نشد'));return}try{const t=document.createElement('textarea');t.value=text;t.setAttribute('readonly','');t.style.position='fixed';t.style.opacity='0';document.body.appendChild(t);t.select();const ok=document.execCommand('copy');t.remove();showToast(ok?'کپی شد':'کپی انجام نشد')}catch{showToast('کپی انجام نشد')}"
+          if old in s:
+              s = s.replace(old, new, 1)
+          p.write_text(s, encoding='utf-8')
+          PY
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git rm .github/workflows/final-pass-zaverk.yml
+          git commit -m "fix: repair remaining site issues without touching translator"
+          git push
