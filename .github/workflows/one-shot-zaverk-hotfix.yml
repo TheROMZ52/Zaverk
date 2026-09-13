@@ -1,0 +1,53 @@
+name: One-shot Zaverk bugfix
+on:
+  push:
+    branches: [main]
+permissions:
+  contents: write
+jobs:
+  hotfix:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Apply non-translator fixes
+        shell: python
+        run: |
+          from pathlib import Path
+          p = Path('index.html')
+          s = p.read_text(encoding='utf-8')
+
+          replacements = [
+              ("<link rel=\"alternate\" hreflang=\"fa\" href=\"https://theromz52.github.io/Zaverk/\"><link rel=\"alternate\" hreflang=\"en\" href=\"https://theromz52.github.io/Zaverk/\"><link rel=\"alternate\" hreflang=\"x-default\" href=\"https://theromz52.github.io/Zaverk/\">",
+               "<link rel=\"alternate\" hreflang=\"fa\" href=\"https://theromz52.github.io/Zaverk/\"><link rel=\"alternate\" hreflang=\"x-default\" href=\"https://theromz52.github.io/Zaverk/\">") ,
+              ('"inLanguage":["fa","en"]', '"inLanguage":["fa"]'),
+              ("document.getElementById('inputText')", "document.getElementById('input')"),
+              ("navigator.clipboard?.writeText(text).then(()=>showToast('کپی شد')).catch(()=>showToast('کپی انجام نشد'))",
+               "if(navigator.clipboard&&typeof navigator.clipboard.writeText==='function'){navigator.clipboard.writeText(text).then(()=>showToast('کپی شد')).catch(()=>showToast('کپی انجام نشد'));return}try{const t=document.createElement('textarea');t.value=text;t.setAttribute('readonly','');t.style.position='fixed';t.style.opacity='0';document.body.appendChild(t);t.select();const ok=document.execCommand('copy');t.remove();showToast(ok?'کپی شد':'کپی انجام نشد')}catch{showToast('کپی انجام نشد')}") ,
+              ('aria-labelledby="zvNameTitle">', 'aria-labelledby="zvNameTitle" aria-describedby="zvNameDescription">'),
+              ('<p>برای ورود به مترجم ژاڤرک، اول اسم خودت رو وارد کن.</p>', '<p id="zvNameDescription">برای ورود به مترجم ژاڤرک، اول اسم خودت رو وارد کن.</p>'),
+              ('<input class="zv-name-input" id="zvNameInput" name="zaverk-name" type="text" autocomplete="name" maxlength="40" spellcheck="false" placeholder="مثلاً مهبد">', '<input class="zv-name-input" id="zvNameInput" name="zaverk-name" type="text" autocomplete="name" maxlength="40" minlength="2" spellcheck="false" aria-invalid="false" aria-describedby="zvNameStatus" placeholder="مثلاً مهبد">'),
+              ("const sync=()=>{const name=input.value.trim();submit.disabled=name.length<2;status.textContent=name&&name.length<2?'اسم باید حداقل ۲ نویسه باشد.':''};",
+               "const sync=()=>{const name=input.value.trim();const invalid=name.length>0&&name.length<2;submit.disabled=invalid||name.length<2;input.setAttribute('aria-invalid',String(invalid));status.textContent=invalid?'اسم باید حداقل ۲ نویسه باشد.':''};"),
+              ("const enter=async()=>{const name=input.value.trim();if(name.length<2){sync();input.focus();return}submit.disabled=true;status.textContent='ثبت اسم…';try{const client=supabase.createClient('https://fjzhkprnxznijwmjrlka.supabase.co','sb_publishable_OeU6Z8Yn_rPuxfKRsMApqw__kcMQIKA');const {error}=await client.from('zaverk_site_visitors').insert({name});if(error)throw error;window.zaverkVisitorName=name;try{localStorage.setItem('zaverkVisitorName',name)}catch{}gate.remove();document.body.classList.remove('zv-gate-locked')}catch(e){console.error(e);status.textContent='ثبت اسم انجام نشد؛ دوباره تلاش کن.';submit.disabled=false}};",
+               "const enter=async()=>{const name=input.value.trim();if(name.length<2){sync();input.focus();return}submit.disabled=true;status.textContent='در حال ورود…';let stored=false;try{if(window.supabase&&typeof window.supabase.createClient==='function'){const client=window.supabase.createClient('https://fjzhkprnxznijwmjrlka.supabase.co','sb_publishable_OeU6Z8Yn_rPuxfKRsMApqw__kcMQIKA');const {error}=await client.from('zaverk_site_visitors').insert({name});if(error)throw error;stored=true}}catch(e){console.warn('Visitor name storage unavailable:',e)}window.zaverkVisitorName=name;status.textContent=stored?'ثبت شد.':'ورود انجام شد.';gate.remove();document.body.classList.remove('zv-gate-locked');document.getElementById('input')?.focus()};"),
+              ("submit.addEventListener('click',enter);\n  requestAnimationFrame(()=>input.focus());",
+               "submit.addEventListener('click',enter);\n  gate.addEventListener('keydown',e=>{if(e.key!=='Tab')return;const focusables=[input,submit].filter(el=>!el.disabled);if(!focusables.length)return;const first=focusables[0],last=focusables[focusables.length-1];if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus()}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus()}});\n  requestAnimationFrame(()=>input.focus());"),
+              ("try{localStorage.setItem('zaverkVisitorName',name)}catch{}", ""),
+          ]
+
+          for old, new in replacements:
+              if old not in s:
+                  raise SystemExit(f'missing expected text: {old[:120]}')
+              s = s.replace(old, new, 1)
+
+          p.write_text(s, encoding='utf-8')
+      - name: Commit fixes and remove one-shot workflow
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git rm .github/workflows/one-shot-zaverk-hotfix.yml
+          git commit -m "fix: harden zaverk site without touching translator"
+          git push
