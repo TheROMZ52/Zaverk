@@ -14,8 +14,7 @@ from pydantic import BaseModel, Field
 import uvicorn
 from rubka import Robot, Message
 
-# Local fallback token requested for this project. RUBKA_TOKEN overrides it when set.
-TOKEN = os.getenv("RUBKA_TOKEN", "BJEBHF0EPLDYJAYEQQPNPMZMKUJIIBMSSCNRAQAHUOHLGIGAEADIBUZVOCJDTYSP")
+TOKEN = os.getenv("RUBKA_TOKEN", "PUT_YOUR_RUBKA_TOKEN_HERE")
 HOST, PORT = "0.0.0.0", 8080
 MAX_MESSAGES, MAX_CHATS, MAX_SEND_COUNT, MIN_DELAY = 400, 100, 100, 1.0
 BASE_DIR = Path(__file__).resolve().parent
@@ -42,7 +41,6 @@ def now_iso():
 
 
 def load_chats():
-    """Load known chats from disk so they survive a bot restart."""
     try:
         if not DATA_FILE.exists():
             return
@@ -59,12 +57,8 @@ def load_chats():
 
 
 def save_chats():
-    """Persist the current chat directory atomically."""
     tmp = DATA_FILE.with_suffix(".tmp")
-    tmp.write_text(
-        json.dumps(list(state["chats"].values()), ensure_ascii=False, indent=2),
-        encoding="utf-8",
-    )
+    tmp.write_text(json.dumps(list(state["chats"].values()), ensure_ascii=False, indent=2), encoding="utf-8")
     tmp.replace(DATA_FILE)
 
 
@@ -81,33 +75,30 @@ def attr(obj, *names, default=None):
     return default
 
 
+def pick(data, *names, default=None):
+    if isinstance(data, dict):
+        for name in names:
+            value = data.get(name)
+            if value not in (None, ""):
+                return value
+        for nested_name in ("chat", "user", "data", "result", "object"):
+            nested = data.get(nested_name)
+            if isinstance(nested, dict):
+                value = pick(nested, *names, default=None)
+                if value not in (None, ""):
+                    return value
+    else:
+        for name in names:
+            value = getattr(data, name, None)
+            if value not in (None, ""):
+                return value
+    return default
+
+
 async def resolve_chat(chat_id):
-    """Fetch the latest available name/profile metadata from Rubka."""
     chat_id = str(chat_id)
     cached = state["chats"].get(chat_id, {})
-    try:
-        data = await call_bot("get_chat", chat_id)
-        if isinstance(data, dict):
-            return {
-                "chat_id": chat_id,
-                "name": data.get("title") or data.get("name") or data.get("first_name") or data.get("username") or cached.get("name") or chat_id,
-                "username": data.get("username") or cached.get("username") or "",
-                "type": data.get("type") or data.get("chat_type") or cached.get("type") or "unknown",
-                "profile": data.get("photo") or data.get("avatar") or data.get("profile") or data.get("profile_photo") or cached.get("profile") or "",
-                "updated_at": now_iso(),
-            }
-    except Exception as e:
-        return {
-            "chat_id": chat_id,
-            "name": cached.get("name") or chat_id,
-            "username": cached.get("username") or "",
-            "type": cached.get("type") or "unknown",
-            "profile": cached.get("profile") or "",
-            "updated_at": now_iso(),
-            "lookup_error": str(e),
-        }
-
-    return {
+    result = {
         "chat_id": chat_id,
         "name": cached.get("name") or chat_id,
         "username": cached.get("username") or "",
@@ -115,6 +106,41 @@ async def resolve_chat(chat_id):
         "profile": cached.get("profile") or "",
         "updated_at": now_iso(),
     }
+
+    try:
+        chat = await call_bot("get_chat", chat_id)
+        name = pick(chat, "title", "name", "first_name", "display_name", "chat_name")
+        username = pick(chat, "username", "user_name", "chat_username")
+        chat_type = pick(chat, "type", "chat_type")
+        profile = pick(chat, "photo", "avatar", "profile", "profile_photo", "photo_url", "avatar_url", "image_url")
+        if name:
+            result["name"] = str(name)
+        if username:
+            result["username"] = str(username)
+        if chat_type:
+            result["type"] = str(chat_type)
+        if profile:
+            result["profile"] = str(profile)
+    except Exception as e:
+        result["lookup_error"] = str(e)
+
+    if result["name"] == chat_id:
+        try:
+            name = await call_bot("get_name", chat_id)
+            if name:
+                result["name"] = str(name)
+        except Exception:
+            pass
+
+    if not result["username"]:
+        try:
+            username = await call_bot("get_username", chat_id)
+            if username:
+                result["username"] = str(username)
+        except Exception:
+            pass
+
+    return result
 
 
 def remember_chat(chat_id, name=None, username=None, chat_type=None, profile=None):
@@ -153,22 +179,11 @@ async def on_message(bot_instance: Robot, message: Message):
         chat_id = str(attr(message, "chat_id", default="UNKNOWN"))
         text = attr(message, "text", "message", default="")
         sender_id = attr(message, "sender_id", default="")
-
         state["received_count"] += 1
-        remember_chat(chat_id)
-
-        # Refresh metadata on every incoming message.
         resolved = await resolve_chat(chat_id)
-        remember_chat(
-            chat_id,
-            resolved.get("name"),
-            resolved.get("username"),
-            resolved.get("type"),
-            resolved.get("profile"),
-        )
-
+        remember_chat(chat_id, resolved.get("name"), resolved.get("username"), resolved.get("type"), resolved.get("profile"))
         add_message(chat_id, text, "in", sender_id)
-        print(f"[IN] {chat_id}: {text}")
+        print(f"[IN] {chat_id} | {resolved.get('name', chat_id)}: {text}")
     except Exception as e:
         state["last_error"] = str(e)
 
@@ -176,15 +191,10 @@ async def on_message(bot_instance: Robot, message: Message):
 async def send_messages(chat_id, delay, count, text):
     chat_id = str(chat_id)
     task_id = f"{chat_id}_{id(asyncio.current_task())}"
-    state["active_tasks"][task_id] = {
-        "chat_id": chat_id,
-        "count": count,
-        "sent": 0,
-        "started_at": now_iso(),
-    }
-    remember_chat(chat_id)
-
+    state["active_tasks"][task_id] = {"chat_id": chat_id, "count": count, "sent": 0, "started_at": now_iso()}
     try:
+        resolved = await resolve_chat(chat_id)
+        remember_chat(chat_id, resolved.get("name"), resolved.get("username"), resolved.get("type"), resolved.get("profile"))
         for i in range(1, count + 1):
             if task_id not in state["active_tasks"]:
                 return
@@ -192,7 +202,6 @@ async def send_messages(chat_id, delay, count, text):
             state["sent_count"] += 1
             state["active_tasks"][task_id]["sent"] = i
             add_message(chat_id, text, "out")
-            remember_chat(chat_id)
             if i < count:
                 await asyncio.sleep(delay)
     except Exception as e:
@@ -245,13 +254,7 @@ async def chat_detail(chat_id: str):
     if chat_id not in state["chats"]:
         raise HTTPException(404, "Chat not found")
     detail = await resolve_chat(chat_id)
-    remember_chat(
-        chat_id,
-        detail.get("name"),
-        detail.get("username"),
-        detail.get("type"),
-        detail.get("profile"),
-    )
+    remember_chat(chat_id, detail.get("name"), detail.get("username"), detail.get("type"), detail.get("profile"))
     return state["chats"][chat_id]
 
 
