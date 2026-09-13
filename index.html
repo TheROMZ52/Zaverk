@@ -129,9 +129,9 @@ render();update();
   const submit=document.getElementById('zvNameSubmit');
   const status=document.getElementById('zvNameStatus');
   if(!gate||!input||!submit)return;
-  document.body.classList.add('zv-gate-locked');
+  document.body.classList.add('zv-gate-locked');try{const saved=localStorage.getItem('zaverkVisitorName');if(saved&&saved.trim().length>=2){window.zaverkVisitorName=saved.trim();gate.remove();document.body.classList.remove('zv-gate-locked');document.getElementById('input')?.focus();return}}catch{}
   const sync=()=>{const name=input.value.trim();const invalid=name.length>0&&name.length<2;submit.disabled=name.length<2;input.setAttribute('aria-invalid',String(invalid));status.textContent=invalid?'اسم باید حداقل ۲ نویسه باشد.':''};
-  const enter=async()=>{const name=input.value.trim();if(name.length<2){sync();input.focus();return}submit.disabled=true;status.textContent='ثبت اسم…';try{const client=supabase.createClient('https://fjzhkprnxznijwmjrlka.supabase.co','sb_publishable_OeU6Z8Yn_rPuxfKRsMApqw__kcMQIKA');const {error}=await client.from('zaverk_site_visitors').insert({name});if(error)throw error;window.zaverkVisitorName=name;gate.remove();document.body.classList.remove('zv-gate-locked')}catch(e){console.warn('Visitor name storage unavailable',e)}window.zaverkVisitorName=name;gate.remove();document.body.classList.remove('zv-gate-locked');document.getElementById('input')?.focus()};
+  const enter=async()=>{const name=input.value.trim();if(name.length<2){sync();input.focus();return}submit.disabled=true;status.textContent='ثبت اسم…';try{const client=supabase.createClient('https://fjzhkprnxznijwmjrlka.supabase.co','sb_publishable_OeU6Z8Yn_rPuxfKRsMApqw__kcMQIKA');const {error}=await client.from('zaverk_site_visitors').insert({name});if(error)throw error;window.zaverkVisitorName=name;try{localStorage.setItem('zaverkVisitorName',name)}catch{}gate.remove();document.body.classList.remove('zv-gate-locked')}catch(e){console.warn('Visitor name storage unavailable',e)}window.zaverkVisitorName=name;gate.remove();document.body.classList.remove('zv-gate-locked');document.getElementById('input')?.focus()};
   input.addEventListener('input',sync);
   input.addEventListener('keydown',e=>{if(e.key==='Enter')enter()});
   submit.addEventListener('click',enter);
