@@ -1,0 +1,4 @@
+rubka==8.1.10
+fastapi
+uvicorn
+pydantic
