@@ -1,0 +1,26 @@
+name: Zip Rubka Control Panel
+
+on:
+  workflow_dispatch:
+
+jobs:
+  zip:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Create ZIP
+        run: |
+          mkdir -p dist
+          zip -r dist/rubka-control-panel.zip rubka-control-panel/
+
+      - name: Upload ZIP artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: rubka-control-panel
+          path: dist/rubka-control-panel.zip
+          if-no-files-found: error
+          retention-days: 7
