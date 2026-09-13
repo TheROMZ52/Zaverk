@@ -1,5 +1,6 @@
 import asyncio
 import inspect
+import json
 import shlex
 import os
 from collections import OrderedDict
@@ -12,11 +13,14 @@ from pydantic import BaseModel, Field
 import uvicorn
 from rubka import Robot, Message
 
-# Local fallback token. The environment variable wins if RUBKA_TOKEN is set.
+# Local fallback token requested for this project. RUBKA_TOKEN overrides it when set.
 TOKEN = os.getenv("RUBKA_TOKEN", "BJEBHF0EPLDYJAYEQQPNPMZMKUJIIBMSSCNRAQAHUOHLGIGAEADIBUZVOCJDTYSP")
 HOST, PORT = "0.0.0.0", 8080
 MAX_MESSAGES, MAX_CHATS, MAX_SEND_COUNT, MIN_DELAY = 400, 100, 100, 1.0
-BASE_DIR, STATIC_DIR = Path(__file__).resolve().parent, Path(__file__).resolve().parent / "static"
+BASE_DIR = Path(__file__).resolve().parent
+STATIC_DIR = BASE_DIR / "static"
+DATA_FILE = BASE_DIR / "chats.json"
+
 bot = Robot(token=TOKEN)
 app = FastAPI(title="Rubka Control Panel")
 
@@ -35,6 +39,31 @@ def now_iso():
     return datetime.now(timezone.utc).isoformat()
 
 
+def load_chats():
+    """Load known chats from disk so they survive a bot restart."""
+    try:
+        if not DATA_FILE.exists():
+            return
+        raw = json.loads(DATA_FILE.read_text(encoding="utf-8"))
+        if not isinstance(raw, list):
+            return
+        for chat in raw[-MAX_CHATS:]:
+            if isinstance(chat, dict) and chat.get("chat_id"):
+                state["chats"][str(chat["chat_id"])] = chat
+    except Exception as e:
+        state["last_error"] = f"chat storage: {e}"
+
+
+def save_chats():
+    """Persist the current chat directory atomically."""
+    tmp = DATA_FILE.with_suffix(".tmp")
+    tmp.write_text(
+        json.dumps(list(state["chats"].values()), ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
+    tmp.replace(DATA_FILE)
+
+
 async def call_bot(method, *args, **kwargs):
     fn = getattr(bot, method)
     return await fn(*args, **kwargs) if inspect.iscoroutinefunction(fn) else await asyncio.to_thread(fn, *args, **kwargs)
@@ -49,7 +78,7 @@ def attr(obj, *names, default=None):
 
 
 async def resolve_chat(chat_id):
-    """Fetch the latest available chat metadata from Rubka."""
+    """Fetch the latest available name/profile metadata from Rubka."""
     cached = state["chats"].get(chat_id, {})
     try:
         data = await call_bot("get_chat", chat_id)
@@ -84,11 +113,10 @@ async def resolve_chat(chat_id):
 
 
 def remember_chat(chat_id, name=None, username=None, chat_type=None, profile=None):
-    """Upsert a chat and move it to the top so the UI sees newest activity first."""
     current = state["chats"].get(chat_id, {})
     state["chats"][chat_id] = {
-        "chat_id": chat_id,
-        "name": name or current.get("name") or chat_id,
+        "chat_id": str(chat_id),
+        "name": name or current.get("name") or str(chat_id),
         "username": username or current.get("username") or "",
         "type": chat_type or current.get("type") or "unknown",
         "profile": profile or current.get("profile") or "",
@@ -97,6 +125,7 @@ def remember_chat(chat_id, name=None, username=None, chat_type=None, profile=Non
     state["chats"].move_to_end(chat_id)
     while len(state["chats"]) > MAX_CHATS:
         state["chats"].popitem(last=False)
+    save_chats()
 
 
 def add_message(chat_id, text, direction, sender_id=""):
@@ -122,7 +151,7 @@ async def on_message(bot_instance: Robot, message: Message):
         state["received_count"] += 1
         remember_chat(chat_id)
 
-        # Refresh name/username/type/profile whenever the chat receives a message.
+        # Refresh metadata on every incoming message.
         resolved = await resolve_chat(chat_id)
         remember_chat(
             chat_id,
@@ -152,15 +181,11 @@ async def send_messages(chat_id, delay, count, text):
         for i in range(1, count + 1):
             if task_id not in state["active_tasks"]:
                 return
-
             await call_bot("send_message", chat_id=chat_id, text=text)
             state["sent_count"] += 1
             state["active_tasks"][task_id]["sent"] = i
             add_message(chat_id, text, "out")
-
-            # Sending also counts as chat activity, so it stays at the top of the list.
             remember_chat(chat_id)
-
             if i < count:
                 await asyncio.sleep(delay)
     except Exception as e:
@@ -183,7 +208,6 @@ async def index():
 
 @app.get("/api/state")
 async def get_state():
-    # The frontend polls this endpoint, so chat/message changes appear almost immediately.
     return {
         "online": True,
         "started_at": state["started_at"],
@@ -212,7 +236,6 @@ async def stop_all():
 async def chat_detail(chat_id: str):
     if chat_id not in state["chats"]:
         raise HTTPException(404, "Chat not found")
-
     detail = await resolve_chat(chat_id)
     remember_chat(
         chat_id,
@@ -231,31 +254,18 @@ async def console():
             args = shlex.split(await asyncio.to_thread(input, "> "))
             if not args:
                 continue
-
             if args[0].lower() == "/send" and len(args) >= 5:
-                chat_id = args[1]
-                delay = float(args[2])
-                count = int(args[3])
-                text = " ".join(args[4:])
-
+                chat_id, delay, count, text = args[1], float(args[2]), int(args[3]), " ".join(args[4:])
                 if delay < MIN_DELAY or count > MAX_SEND_COUNT:
                     print("[ERROR] delay >= 1 and count <= 100")
                     continue
-
                 asyncio.create_task(send_messages(chat_id, delay, count, text))
-
             elif args[0].lower() == "/stop":
                 state["active_tasks"].clear()
-
             elif args[0].lower() == "/status":
-                print(
-                    f"IN={state['received_count']} OUT={state['sent_count']} "
-                    f"CHATS={len(state['chats'])} ACTIVE={len(state['active_tasks'])}"
-                )
-
+                print(f"IN={state['received_count']} OUT={state['sent_count']} CHATS={len(state['chats'])} ACTIVE={len(state['active_tasks'])}")
             elif args[0].lower() == "/help":
                 print("/send <chat_id> <delay> <count> <message> | /stop | /status | /help")
-
         except (KeyboardInterrupt, EOFError):
             return
         except Exception as e:
@@ -263,12 +273,11 @@ async def console():
 
 
 async def run_web():
-    await uvicorn.Server(
-        uvicorn.Config(app, host=HOST, port=PORT, log_level="warning")
-    ).serve()
+    await uvicorn.Server(uvicorn.Config(app, host=HOST, port=PORT, log_level="warning")).serve()
 
 
 async def main():
+    load_chats()
     state["started_at"] = now_iso()
     await asyncio.gather(bot.run(), run_web(), console())
 
