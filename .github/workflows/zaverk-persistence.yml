@@ -13,24 +13,29 @@ jobs:
         shell: python
         run: |
           from pathlib import Path
+          import re
           p = Path('index.html')
           s = p.read_text(encoding='utf-8')
-          marker = "document.body.classList.add('zv-gate-locked');"
-          early = "document.body.classList.add('zv-gate-locked');try{const saved=localStorage.getItem('zaverkVisitorName');if(saved&&saved.trim().length>=2){window.zaverkVisitorName=saved.trim();gate.remove();document.body.classList.remove('zv-gate-locked');document.getElementById('input')?.focus();return}}catch{}"
-          if marker in s and "localStorage.getItem('zaverkVisitorName')" not in s:
+          if "localStorage.getItem('zaverkVisitorName')" not in s:
+              marker = "document.body.classList.add('zv-gate-locked');"
+              early = "document.body.classList.add('zv-gate-locked');try{const saved=localStorage.getItem('zaverkVisitorName');if(saved&&saved.trim().length>=2){window.zaverkVisitorName=saved.trim();gate.remove();document.body.classList.remove('zv-gate-locked');document.getElementById('input')?.focus();return}}catch{}"
+              if marker not in s:
+                  raise SystemExit('name gate lock marker not found')
               s = s.replace(marker, early, 1)
-          old = "window.zaverkVisitorName=name;status.textContent=stored?'ثبت شد.':'ورود انجام شد.';gate.remove();document.body.classList.remove('zv-gate-locked');document.getElementById('input')?.focus()"
-          new = "window.zaverkVisitorName=name;try{localStorage.setItem('zaverkVisitorName',name)}catch{}status.textContent=stored?'ثبت شد.':'ورود انجام شد.';gate.remove();document.body.classList.remove('zv-gate-locked');document.getElementById('input')?.focus()"
-          if old not in s:
-              raise SystemExit('visitor entry handler not found')
-          s = s.replace(old, new, 1)
+          if "localStorage.setItem('zaverkVisitorName',name)" not in s:
+              target = "window.zaverkVisitorName=name;"
+              replacement = "window.zaverkVisitorName=name;try{localStorage.setItem('zaverkVisitorName',name)}catch{}"
+              if target not in s:
+                  raise SystemExit('visitor name assignment not found')
+              s = s.replace(target, replacement, 1)
           p.write_text(s, encoding='utf-8')
-      - name: Commit and remove one-shot workflows
+      - name: Commit and clean one-shot workflows
         shell: bash
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add index.html
           git rm .github/workflows/zaverk-persistence.yml
+          if [ -f .github/workflows/one-shot-zaverk-hotfix.yml ]; then git rm .github/workflows/one-shot-zaverk-hotfix.yml; fi
           if [ -f .github/workflows/one-shot-zaverk-hotfix.yml ]; then git rm .github/workflows/one-shot-zaverk-hotfix.yml; fi
           if ! git diff --cached --quiet; then git commit -m "fix: remember Zaverk visitor names"; git push; fi
