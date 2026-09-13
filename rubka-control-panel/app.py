@@ -9,6 +9,7 @@ from pathlib import Path
 
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 import uvicorn
 from rubka import Robot, Message
@@ -23,6 +24,7 @@ DATA_FILE = BASE_DIR / "chats.json"
 
 bot = Robot(token=TOKEN)
 app = FastAPI(title="Rubka Control Panel")
+app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
 state = {
     "started_at": None,
@@ -49,7 +51,9 @@ def load_chats():
             return
         for chat in raw[-MAX_CHATS:]:
             if isinstance(chat, dict) and chat.get("chat_id"):
-                state["chats"][str(chat["chat_id"])] = chat
+                chat_id = str(chat["chat_id"])
+                chat["chat_id"] = chat_id
+                state["chats"][chat_id] = chat
     except Exception as e:
         state["last_error"] = f"chat storage: {e}"
 
@@ -79,6 +83,7 @@ def attr(obj, *names, default=None):
 
 async def resolve_chat(chat_id):
     """Fetch the latest available name/profile metadata from Rubka."""
+    chat_id = str(chat_id)
     cached = state["chats"].get(chat_id, {})
     try:
         data = await call_bot("get_chat", chat_id)
@@ -113,10 +118,11 @@ async def resolve_chat(chat_id):
 
 
 def remember_chat(chat_id, name=None, username=None, chat_type=None, profile=None):
+    chat_id = str(chat_id)
     current = state["chats"].get(chat_id, {})
     state["chats"][chat_id] = {
-        "chat_id": str(chat_id),
-        "name": name or current.get("name") or str(chat_id),
+        "chat_id": chat_id,
+        "name": name or current.get("name") or chat_id,
         "username": username or current.get("username") or "",
         "type": chat_type or current.get("type") or "unknown",
         "profile": profile or current.get("profile") or "",
@@ -144,7 +150,7 @@ def add_message(chat_id, text, direction, sender_id=""):
 @bot.on_message()
 async def on_message(bot_instance: Robot, message: Message):
     try:
-        chat_id = attr(message, "chat_id", default="UNKNOWN")
+        chat_id = str(attr(message, "chat_id", default="UNKNOWN"))
         text = attr(message, "text", "message", default="")
         sender_id = attr(message, "sender_id", default="")
 
@@ -168,6 +174,7 @@ async def on_message(bot_instance: Robot, message: Message):
 
 
 async def send_messages(chat_id, delay, count, text):
+    chat_id = str(chat_id)
     task_id = f"{chat_id}_{id(asyncio.current_task())}"
     state["active_tasks"][task_id] = {
         "chat_id": chat_id,
@@ -234,6 +241,7 @@ async def stop_all():
 
 @app.get("/api/chat/{chat_id}")
 async def chat_detail(chat_id: str):
+    chat_id = str(chat_id)
     if chat_id not in state["chats"]:
         raise HTTPException(404, "Chat not found")
     detail = await resolve_chat(chat_id)
