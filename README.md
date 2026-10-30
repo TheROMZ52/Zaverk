@@ -1,6 +1,7 @@
 # Žavërk — Experimental Constructed Language
 
 Because apparently inventing a whole language is a perfectly normal side project.
+
 Žavërk is an experimental constructed language with its own alphabet, pronunciation rules, grammar, and a browser-based translator experience.
 
 This repository contains the translator website, its design specification, and the language reference.
