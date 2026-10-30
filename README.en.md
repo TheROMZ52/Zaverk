@@ -1,5 +1,6 @@
 # Žavërk — Language Guide
 
+A conlang with its own alphabet and grammar, because one more language on Earth apparently wasn't enough.
 Žavërk is an experimental constructed language with its own alphabet, pronunciation system, and grammar.
 
 [English](README.en.md) · [فارسی](README.fa.md)
