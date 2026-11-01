@@ -1,12 +1,30 @@
-# ژاورک — Žavërk
+<div align="center">
 
-یه زبان ساختگی با الفبا و دستور زبان خودش؛ چون ظاهراً زبان‌های دنیا هنوز کم بودن!
+<img src="https://capsule-render.vercel.app/api?type=waving&color=0:050505,35:171717,70:303030,100:050505&height=190&section=header&text=Zaverk&fontSize=54&fontColor=ffffff&fontAlignY=38&desc=AN%20EXPERIMENTAL%20CONSTRUCTED%20LANGUAGE&descAlignY=62&descSize=13" width="100%" />
 
-ژاورک یک زبان ساخته‌شده و آزمایشی است که الفبا، قواعد تلفظ و دستور زبان مخصوص خودش را دارد.
+<br/>
+
+<img src="https://img.shields.io/badge/CONLANG-111111?style=for-the-badge&logo=googletranslate&logoColor=white" /> <img src="https://img.shields.io/badge/HTML-111111?style=for-the-badge&logo=html5&logoColor=white" /> <img src="https://img.shields.io/github/stars/TheROMZ52/Zaverk?style=for-the-badge&color=111111&labelColor=050505&logo=github" /> <img src="https://img.shields.io/github/last-commit/TheROMZ52/Zaverk?style=for-the-badge&color=111111&labelColor=050505" />
+
+<br/>
+
+## ژاورک — Žavërk
 
 [English](README.en.md) · [فارسی](README.fa.md)
 
-## الفبا و تلفظ
+### یه زبان ساختگی با الفبا و دستور زبان خودش؛ چون ظاهراً زبان‌های دنیا هنوز کم بودن!
+
+<img src="https://skillicons.dev/icons?i=html,css,js&theme=dark" />
+
+</div>
+
+---
+
+ژاورک یک زبان ساخته‌شده و آزمایشی است که الفبا، قواعد تلفظ و دستور زبان مخصوص خودش را دارد.
+
+---
+
+## 01 / الفبا و تلفظ
 
 | حرف | تلفظ |
 |---|---|
@@ -62,7 +80,9 @@
 
 **قانون کلی تلفظ:** هر حرف معمولاً صدای مشخصی دارد و کلمات تقریباً همان‌طور که نوشته می‌شوند خوانده می‌شوند.
 
-## دستور زبان
+---
+
+## 02 / دستور زبان
 
 ### ۱. ترتیب جمله
 
@@ -197,7 +217,9 @@ Vü Bë Mëla?
 - `Käv de Në.` — خانهٔ من
 - `VæƵ de Vü.` — بازی تو
 
-## ساختارهای پایه
+---
+
+## 03 / ساختارهای پایه
 
 **جملهٔ فعلی:**
 
@@ -211,7 +233,9 @@ Vü Bë Mëla?
 
 `Në Bë Mëla.` — من خوب هستم.
 
-## خلاصهٔ قواعد
+---
+
+## 04 / خلاصهٔ قواعد
 
 - ترتیب پایهٔ جمله: فاعل + مفعول + فعل
 - صفت معمولاً بعد از اسم می‌آید.
@@ -223,3 +247,17 @@ Vü Bë Mëla?
 - واژه‌ها تا حد امکان مطابق شکل نوشتاری‌شان خوانده می‌شوند.
 
 > این زبان و قواعد آن آزمایشی هستند و ممکن است در نسخه‌های بعدی تغییر کنند.
+
+---
+
+<div align="center">
+
+<a href="https://github.com/TheROMZ52?tab=repositories"><img src="https://img.shields.io/badge/MORE%20PROJECTS-111111?style=for-the-badge&logo=github&logoColor=white" /></a>
+
+<br/><br/>
+
+<img src="https://capsule-render.vercel.app/api?type=waving&color=0:050505,50:202020,100:050505&height=110&section=footer" width="100%" />
+
+<sub>© TheROMZ52 • ساخته‌شده با کد، کنجکاوی و تعداد مشکوکی تب باز.</sub>
+
+</div>
